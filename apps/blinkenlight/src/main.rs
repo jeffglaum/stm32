@@ -20,18 +20,22 @@ fn main() -> ! {
 
     // Initialize LED GPIO
     rprintln!("INFO: initialize LED");
+    let gpioa = dp.GPIOA.split(&mut rcc);
     let gpiob = dp.GPIOB.split(&mut rcc);
     let mut led = gpiob.pb8.into_push_pull_output();
+    let mut led2 = gpioa.pa0.into_push_pull_output();
 
     loop {
         rprintln!("INFO: set LED low");
         for _ in 0..10_000 {
             led.set_low().unwrap();
+            led2.set_low().unwrap();
         }
 
         rprintln!("INFO: set LED high");
         for _ in 0..10_000 {
             led.set_high().unwrap();
+            led2.set_high().unwrap();
         }
     }
 }
