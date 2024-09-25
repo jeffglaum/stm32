@@ -11,9 +11,6 @@ use embassy_stm32::gpio::{Level, Output, Speed};
 use embassy_stm32::spi::{BitOrder, Config, Spi, MODE_0};
 use embassy_stm32::time::Hertz;
 use embassy_sync::blocking_mutex::NoopMutex;
-//use embedded_hal::spi::Operation::DelayNs;
-//use embedded_hal_async::spi::Operation::DelayNs;
-//use embedded_hal::delay::DelayNs;
 use is31fl3743b_driver::{CSy, Is31fl3743b, SWx};
 use rtt_target::{rprintln, rtt_init_print};
 use static_cell::StaticCell;
@@ -28,8 +25,7 @@ fn main() -> ! {
     spi_config.mode = MODE_0;
     spi_config.bit_order = BitOrder::MsbFirst;
     spi_config.frequency = Hertz(1_000_000);
-    // Spi<'_, {unknown}, NoDma, _>
-    // Spi<'d, T, Tx, Rx>
+
     static SPI_BUS: StaticCell<
         NoopMutex<RefCell<Spi<'_, embassy_stm32::peripherals::SPI1, NoDma, NoDma>>>,
     > = StaticCell::new();
@@ -43,13 +39,6 @@ fn main() -> ! {
     let spi_dev = SpiDevice::new(spi_bus, cs);
 
     let mut driver = Is31fl3743b::new(spi_dev).unwrap();
-
-    // Perform a test which detects shorted LEDs
-    //let delay = DelayNs;
-    //let led_status = driver.detect_shorts(d).unwrap();
-    //if !led_status.all_leds_ok() {
-    //panic!("There is a short among the LEDs")
-    //}
 
     // Perform some configuration
     let _ = driver.enable_phase_delay();
