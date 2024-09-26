@@ -40,4 +40,7 @@ fn main() {
 
     // Set the linker script to the one provided by cortex-m-rt.
     println!("cargo:rustc-link-arg=-Tlink.x");
+
+    // Set linker script for defmt (panic handler)
+    println!("cargo:rustc-link-arg-bins=-Tdefmt.x");
 }
