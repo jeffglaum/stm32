@@ -3,16 +3,23 @@
 
 use {defmt_rtt as _, panic_probe as _};
 
+use core::convert::TryFrom;
 use defmt::info;
 //use defmt::{info, panic};
 use embassy_executor::Spawner;
 use embassy_stm32::dma::NoDma;
 use embassy_stm32::gpio::{Level, Output, Speed};
+use embassy_stm32::rng::Rng;
 use embassy_stm32::spi::{BitOrder, Config, Spi, MODE_0};
 use embassy_stm32::time::Hertz;
+use embassy_stm32::{bind_interrupts, peripherals, rng};
 //use embassy_time::Delay;
 use embedded_hal_bus::spi::ExclusiveDevice;
 use is31fl3743b_driver::{CSy, Is31fl3743b, SWx};
+
+bind_interrupts!(struct Irqs {
+    RNG => rng::InterruptHandler<peripherals::RNG>;
+});
 
 #[embassy_executor::main]
 async fn main(_spawner: Spawner) {
@@ -45,10 +52,22 @@ async fn main(_spawner: Spawner) {
     let _ = driver.enable_phase_delay();
     let _ = driver.set_global_current(90);
 
-    // Adjust current/brightness of specific LED (by given SWx and CSy coordinates)
-    let _ = driver.set_led_peak_current(SWx::SW4, CSy::CS10, 50);
-    let _ = driver.set_led_brightness(SWx::SW4, CSy::CS10, 50);
+    // Random number generator
+    let mut rng = Rng::new(p.RNG, Irqs);
 
-    // Clean up
-    driver.destroy();
+    loop {
+        // Randomize column, row, and intensity (on-off)
+        let mut pos = [0u8; 1];
+        rng.async_fill_bytes(&mut pos).await.unwrap();
+        let x = (pos[0] % 11) + 1;
+        let y = (pos[0] % 18) + 1;
+        let mut int = [0u8; 1];
+        rng.async_fill_bytes(&mut int).await.unwrap();
+        let i = if int[0] % 2 == 0 { 25 } else { 0 };
+
+        // Adjust current/brightness of specific LED (by given SWx and CSy coordinates)
+        let _ =
+            driver.set_led_peak_current(SWx::try_from(x).unwrap(), CSy::try_from(y).unwrap(), i);
+        let _ = driver.set_led_brightness(SWx::try_from(x).unwrap(), CSy::try_from(y).unwrap(), i);
+    }
 }
