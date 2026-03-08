@@ -4,12 +4,12 @@
 use panic_halt as _; // you can put a breakpoint on `rust_begin_unwind` to catch panics
 
 use embassy_executor::Spawner;
-use embassy_stm32::gpio::{Level, Output, Pin, Speed};
+use embassy_stm32::gpio::{Level, Output, Speed};
 use embassy_time::Timer;
 use rtt_target::{rprintln, rtt_init_print};
 
 #[embassy_executor::task]
-async fn blink(pin: impl Pin) {
+async fn blink(pin: embassy_stm32::gpio::AnyPin) {
     let mut led = Output::new(pin, Level::High, Speed::Low);
 
     rprintln!("INFO: blink task started");
@@ -29,7 +29,7 @@ async fn main(spawner: Spawner) {
 
     // Blink LED attached to PA0
     rprintln!("INFO: spawning blink task");
-    spawner.spawn(blink(p.PA0)).unwrap();
+    spawner.spawn(blink(p.PA0.into())).unwrap();
 
     let mut led = Output::new(p.PB8, Level::High, Speed::Low);
 
